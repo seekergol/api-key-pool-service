@@ -392,7 +392,8 @@ async function handleAPIRequest(req, urlObj, corsHeaders) {
 
     let fetchUrl = targetUrl;
     if (provider === "gemini") {
-      // 使用请求头传递API密钥，而不是查询参数
+      // 只允许2.5/2.0 flash模型，路径拼接与官方一致
+      fetchUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiPath}`;
       headers["x-goog-api-key"] = keyInfo.key;
     } else if (provider === "openai") {
       headers["Authorization"] = `Bearer ${keyInfo.key}`;
