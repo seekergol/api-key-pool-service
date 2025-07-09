@@ -392,9 +392,8 @@ async function handleAPIRequest(req, urlObj, corsHeaders) {
 
     let fetchUrl = targetUrl;
     if (provider === "gemini") {
-      const url = new URL(targetUrl);
-      url.searchParams.set("key", keyInfo.key);
-      fetchUrl = url.toString();
+      // 使用请求头传递API密钥，而不是查询参数
+      headers["x-goog-api-key"] = keyInfo.key;
     } else if (provider === "openai") {
       headers["Authorization"] = `Bearer ${keyInfo.key}`;
     }
