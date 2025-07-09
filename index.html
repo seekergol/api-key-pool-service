@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Key Pool Service</title>
+    <script src="sw.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .api-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+        .endpoint {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+        }
+        .method {
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .get { background: #28a745; }
+        .post { background: #007bff; }
+        .put { background: #ffc107; color: #333; }
+        .delete { background: #dc3545; }
+        .test-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .test-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #5a6fd8;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .config-section {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .config-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔑 API Key Pool Service</h1>
+        
+        <div class="config-section">
+            <h3>⚙️ 配置信息</h3>
+            <div>
+                <label>服务地址:</label>
+                <input type="text" id="serviceUrl" class="config-input" 
+                       value="https://your-username.github.io/api-key-pool-service" 
+                       placeholder="输入你的GitHub Pages地址">
+            </div>
+            <div>
+                <label>管理员密钥:</label>
+                <input type="password" id="adminKey" class="config-input" 
+                       placeholder="输入管理员密钥">
+            </div>
+            <div>
+                <label>Gemini API密钥:</label>
+                <input type="password" id="geminiApiKey" class="config-input" 
+                       placeholder="输入Gemini API密钥">
+            </div>
+            <div>
+                <label>中转服务地址:</label>
+                <input type="text" id="proxyUrl" class="config-input" 
+                       value="https://steamgovernment.deno.dev" 
+                       placeholder="输入中转服务地址">
+            </div>
+            <div>
+                <label>
+                    <input type="checkbox" id="enableProxy" checked> 启用中转服务
+                </label>
+            </div>
+            <div>
+                <label>
+                    <input type="checkbox" id="fallbackDirect" checked> 中转失败时回退到直接调用
+                </label>
+            </div>
+            <button class="test-button" onclick="saveConfig()">保存配置</button>
+        </div>
+
+        <div class="api-section">
+            <h3>📚 API 端点</h3>
+            
+            <div class="endpoint">
+                <span class="method get">GET</span> /health - 健康检查
+            </div>
+            
+            <div class="endpoint">
+                <span class="method post">POST</span> /admin/keys - 添加API密钥
+            </div>
+            
+            <div class="endpoint">
+                <span class="method get">GET</span> /admin/status - 查看密钥池状态
+            </div>
+            
+            <div class="endpoint">
+                <span class="method post">POST</span> /api/gemini/* - 调用Gemini API
+            </div>
+            
+            <div class="endpoint">
+                <span class="method post">POST</span> /api/openai/* - 调用OpenAI API
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 快速测试</h3>
+            <button class="test-button" onclick="testHealth()">健康检查</button>
+            <button class="test-button" onclick="testAddKey()">添加密钥</button>
+            <button class="test-button" onclick="testGetStatus()">查看状态</button>
+            <button class="test-button" onclick="testGeminiAPI()">测试Gemini API</button>
+            <button class="test-button" onclick="updateProxyConfig()">更新中转配置</button>
+            <button class="test-button" onclick="runFullTest()">运行完整测试</button>
+            <button class="test-button" onclick="clearResults()">清除结果</button>
+            
+            <div id="testResults"></div>
+        </div>
+
+        <div class="api-section">
+            <h3>📖 使用说明</h3>
+            <p><strong>1. 部署步骤:</strong></p>
+            <ol>
+                <li>将代码推送到GitHub仓库</li>
+                <li>在仓库设置中启用GitHub Pages</li>
+                <li>选择main分支作为源</li>
+                <li>等待部署完成</li>
+            </ol>
+            
+            <p><strong>2. 配置说明:</strong></p>
+            <ul>
+                <li>服务地址：你的GitHub Pages地址</li>
+                <li>管理员密钥：用于管理API密钥的密钥</li>
+                <li>Gemini API密钥：你的Gemini API密钥</li>
+            </ul>
+            
+            <p><strong>3. 中转服务配置:</strong></p>
+            <ul>
+                <li>🔄 启用中转服务：通过代理服务转发API请求</li>
+                <li>🔄 回退机制：中转失败时自动回退到直接调用</li>
+                <li>🔄 动态配置：可以随时修改中转服务地址</li>
+                <li>🔄 CORS解决：避免跨域问题</li>
+            </ul>
+            
+            <p><strong>4. 优势:</strong></p>
+            <ul>
+                <li>✅ 无调用次数限制</li>
+                <li>✅ 完全免费</li>
+                <li>✅ 全球CDN加速</li>
+                <li>✅ 自动HTTPS</li>
+                <li>✅ 灵活的中转服务配置</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // 配置管理
+        function saveConfig() {
+            const config = {
+                serviceUrl: document.getElementById('serviceUrl').value,
+                adminKey: document.getElementById('adminKey').value,
+                geminiApiKey: document.getElementById('geminiApiKey').value,
+                proxyUrl: document.getElementById('proxyUrl').value,
+                enableProxy: document.getElementById('enableProxy').checked,
+                fallbackDirect: document.getElementById('fallbackDirect').checked
+            };
+            localStorage.setItem('apiKeyPoolConfig', JSON.stringify(config));
+            showResult('配置已保存', 'success');
+        }
+
+        function loadConfig() {
+            const config = JSON.parse(localStorage.getItem('apiKeyPoolConfig') || '{}');
+            if (config.serviceUrl) document.getElementById('serviceUrl').value = config.serviceUrl;
+            if (config.adminKey) document.getElementById('adminKey').value = config.adminKey;
+            if (config.geminiApiKey) document.getElementById('geminiApiKey').value = config.geminiApiKey;
+            if (config.proxyUrl) document.getElementById('proxyUrl').value = config.proxyUrl;
+            if (config.enableProxy !== undefined) document.getElementById('enableProxy').checked = config.enableProxy;
+            if (config.fallbackDirect !== undefined) document.getElementById('fallbackDirect').checked = config.fallbackDirect;
+        }
+
+        // HTTP请求函数
+        async function makeRequest(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                const data = await response.json();
+                return { status: response.status, data };
+            } catch (error) {
+                return { status: 0, data: { error: error.message } };
+            }
+        }
+
+        // 显示结果
+        function showResult(message, type = 'info', data = null) {
+            const resultsDiv = document.getElementById('testResults');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `status ${type}`;
+            
+            let content = message;
+            if (data) {
+                content += '\n' + JSON.stringify(data, null, 2);
+            }
+            
+            resultDiv.textContent = content;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        // 清除结果
+        function clearResults() {
+            document.getElementById('testResults').innerHTML = '';
+        }
+
+        // 获取配置
+        function getConfig() {
+            return {
+                serviceUrl: document.getElementById('serviceUrl').value,
+                adminKey: document.getElementById('adminKey').value,
+                geminiApiKey: document.getElementById('geminiApiKey').value,
+                proxyUrl: document.getElementById('proxyUrl').value,
+                enableProxy: document.getElementById('enableProxy').checked,
+                fallbackDirect: document.getElementById('fallbackDirect').checked
+            };
+        }
+
+        // 更新中转服务配置
+        async function updateProxyConfig() {
+            const config = getConfig();
+            try {
+                const response = await fetch('/admin/proxy-config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Admin-Key': config.adminKey
+                    },
+                    body: JSON.stringify({
+                        enabled: config.enableProxy,
+                        baseUrl: config.proxyUrl,
+                        fallbackToDirect: config.fallbackDirect
+                    })
+                });
+                
+                if (response.ok) {
+                    showResult('中转服务配置已更新', 'success');
+                } else {
+                    showResult('中转服务配置更新失败', 'error');
+                }
+            } catch (error) {
+                showResult('更新中转服务配置时出错: ' + error.message, 'error');
+            }
+        }
+
+        // 测试函数
+        async function testHealth() {
+            const config = getConfig();
+            showResult('正在测试健康检查...', 'info');
+            
+            const response = await makeRequest(`${config.serviceUrl}/health`);
+            
+            if (response.status === 200) {
+                showResult('✅ 健康检查通过', 'success', response.data);
+            } else {
+                showResult('❌ 健康检查失败', 'error', response.data);
+            }
+        }
+
+        async function testAddKey() {
+            const config = getConfig();
+            if (!config.adminKey || !config.geminiApiKey) {
+                showResult('❌ 请先配置管理员密钥和Gemini API密钥', 'error');
+                return;
+            }
+            
+            showResult('正在添加API密钥...', 'info');
+            
+            const response = await makeRequest(`${config.serviceUrl}/admin/keys`, {
+                method: 'POST',
+                headers: {
+                    'X-Admin-Key': config.adminKey
+                },
+                body: JSON.stringify({
+                    provider: 'gemini',
+                    apiKey: config.geminiApiKey,
+                    maxRequests: 1000,
+                    metadata: {
+                        description: 'Test Gemini API Key',
+                        tags: ['test', 'gemini']
+                    }
+                })
+            });
+            
+            if (response.status === 201) {
+                showResult('✅ 密钥添加成功', 'success', response.data);
+            } else {
+                showResult('❌ 密钥添加失败', 'error', response.data);
+            }
+        }
+
+        async function testGetStatus() {
+            const config = getConfig();
+            if (!config.adminKey) {
+                showResult('❌ 请先配置管理员密钥', 'error');
+                return;
+            }
+            
+            showResult('正在获取密钥池状态...', 'info');
+            
+            const response = await makeRequest(
+                `${config.serviceUrl}/admin/status?provider=gemini`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'X-Admin-Key': config.adminKey
+                    }
+                }
+            );
+            
+            if (response.status === 200) {
+                showResult('✅ 状态获取成功', 'success', response.data);
+            } else {
+                showResult('❌ 状态获取失败', 'error', response.data);
+            }
+        }
+
+        async function testGeminiAPI() {
+            const config = getConfig();
+            showResult('正在测试Gemini API调用...', 'info');
+            
+            const response = await makeRequest(
+                `${config.serviceUrl}/api/gemini/models/gemini-pro:generateContent?strategy=roundRobin`,
+                {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        contents: [
+                            {
+                                parts: [
+                                    {
+                                        text: "Hello! Please respond with 'API Key Pool Service is working!' in English."
+                                    }
+                                ]
+                            }
+                        ]
+                    })
+                }
+            );
+            
+            if (response.status === 200 && response.data.candidates) {
+                const responseText = response.data.candidates[0]?.content?.parts[0]?.text || 'No response';
+                showResult('✅ Gemini API调用成功', 'success', {
+                    response: responseText.substring(0, 100) + '...'
+                });
+            } else {
+                showResult('❌ Gemini API调用失败', 'error', response.data);
+            }
+        }
+
+        async function runFullTest() {
+            showResult('🚀 开始运行完整测试...', 'info');
+            
+            await testHealth();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testAddKey();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testGetStatus();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testGeminiAPI();
+            
+            showResult('🎉 完整测试完成!', 'success');
+        }
+
+        // 页面加载时加载配置
+        window.onload = function() {
+            loadConfig();
+        };
+    </script>
+</body>
+</html> 

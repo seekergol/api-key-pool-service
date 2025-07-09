@@ -1,0 +1,37 @@
+{
+  "name": "api-key-pool-service",
+  "version": "1.0.0",
+  "description": "A smart API key pool service with load balancing and round-robin functionality",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node test.js",
+    "quick-test": "node quick-test.js",
+    "dev": "vercel dev"
+  },
+  "keywords": [
+    "api",
+    "key-pool",
+    "load-balancing",
+    "round-robin",
+    "gemini",
+    "openai",
+    "vercel",
+    "serverless"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/api-key-pool-service.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/api-key-pool-service/issues"
+  },
+  "homepage": "https://github.com/yourusername/api-key-pool-service#readme"
+} 
