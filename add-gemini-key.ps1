@@ -2,7 +2,7 @@
 Write-Host "🔑 添加Gemini API密钥" -ForegroundColor Green
 Write-Host ""
 
-$serviceUrl = "https://seekergol.github.io/api-key-pool-service"
+$serviceUrl = "https://seekergol-api-key-poo-92.deno.dev"
 $adminKey = "84861142"
 
 # 检查服务状态
