@@ -76,7 +76,7 @@ git commit -m "Deploy API Key Pool Service to GitHub Pages"
 
 # 推送到远程仓库
 Write-Host "🚀 推送到 GitHub..." -ForegroundColor Yellow
-git push origin main
+git push -u origin master
 
 Write-Host ""
 Write-Host "✅ 部署完成！" -ForegroundColor Green
